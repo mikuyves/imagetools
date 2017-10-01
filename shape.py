@@ -25,12 +25,11 @@ def squarify(filename, border=0):
     dx = int(round((side - x) / 2, 0))
     dy = int(round((side - y) / 2, 0))
     # Position of the paste image.
-    paste_points = (
-        side - x - dx,
-        side - y - dy,
-        dx + x,
-        dy + y
-    )
+    px0 = side - x - dx  # Left
+    py0 = side - y - dy  # Top
+    px1 = px0 + x  # Right
+    py1 = py0 + y  # Bottom
+    paste_points = (px0, py0, px1, py1)
     background = Image.new('RGBA', square_size, (255, 255, 255))
     background.paste(img, paste_points)
     new_filename = filename.replace('.jpg', '_sq.jpg')
