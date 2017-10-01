@@ -5,7 +5,7 @@ from PIL import Image
 from config import WORKPATH
 
 
-fmt = '{img.size}\t->\t{background.size}\t[{paste_points}]\t{new_filename}'
+fmt = '{img.size}\t->\t{background.size}\t[{paste_points}]\t{filename}'
 
 
 def check_files():
@@ -17,7 +17,19 @@ def check_files():
     return jpg_filenames
 
 
-def squarify(filename, border=0):
+def change_filename(filename):
+    path, name = os.path.split(filename)
+    new_path = os.path.join(path, 'square')
+    try:
+        os.mkdir(new_path)
+    except FileExistsError:
+        pass
+    new_name = name.replace('.jpg', '_sq.jpg')
+    new_filename = os.path.join(new_path, new_name)
+    return new_filename
+
+
+def squarify(filename, border=0, is_replace=False):
     img = Image.open(filename)
     x, y = img.size
     side = max([x, y]) + border * 2  # Must add at both side.
@@ -32,19 +44,23 @@ def squarify(filename, border=0):
     paste_points = (px0, py0, px1, py1)
     background = Image.new('RGBA', square_size, (255, 255, 255))
     background.paste(img, paste_points)
-    new_filename = filename.replace('.jpg', '_sq.jpg')
-    background.save(new_filename)
+    if not is_replace:
+        filename = change_filename(filename)
+    background.save(filename)
 
     print(fmt.format(**locals()))
 
 
-def squarify_many(filenames, border):
+def squarify_many(filenames, *args):
     for filename in filenames:
-        squarify(filename, border)
+        squarify(filename, *args)
 
 
 def main():
+    # Get arguments from command line.
     import sys
+    args = []
+    # border.
     try:
         border = int(sys.argv[1])
     except IndexError:
@@ -52,9 +68,20 @@ def main():
     except ValueError:
         print('The first argument is for border which is an <int>.')
         return
-    if border < 0:
-        border = -border
-    squarify_many(check_files(), border=border)
+    finally:
+        if border < 0:
+            border = -border
+        args.append(border)
+
+    # is_replace.
+    try:
+        is_replace = bool(sys.argv[2])
+    except IndexError:
+        is_replace = False
+    finally:
+        args.append(is_replace)
+
+    squarify_many(check_files(), *args)
 
 
 if __name__ == '__main__':
